@@ -1,0 +1,3 @@
+# GPU backend. Install in a compatible Linux/WSL environment.
+vllm==0.27.1
+

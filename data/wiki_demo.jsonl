@@ -1,0 +1,3 @@
+{"source_id":"DEMO-001","title":"合成演示：期限事实不完整","source_type":"synthetic_demo","full_original":"申请人称已于某日提交材料，但当前材料未展示签收日期、送达凭证或法定期限的完整起算事实。处理时应将日期标为未知，不得从残缺编号或扫描痕迹补写。"}
+{"source_id":"DEMO-002","title":"合成演示：主体与事件分别绑定","source_type":"synthetic_demo","full_original":"甲机关作出通知，乙机关仅转交材料。审查时应分别识别行为作出者、送达者、申请人和第三人，不得因同一卷宗出现多个机关名称而互换主体。"}
+

@@ -1,0 +1,28 @@
+{
+  "version": "r79-public-routing-v1",
+  "backend": {
+    "mtp_tokens": 3,
+    "max_model_len": 16384,
+    "max_concurrent_requests": 8,
+    "max_active_loras": 3,
+    "max_backend_requests_per_workflow": 8
+  },
+  "routes": {
+    "fact_extraction": "facts_1949",
+    "procedure_timeline": "procedure_1978",
+    "legal_reasoning_and_final_answer": "candidate_r79",
+    "reasoning_graph_retrieval": "deterministic_local_fts",
+    "similar_case_retrieval": "deterministic_local_fts_no_inference"
+  },
+  "excluded_adapters": ["2008", "2026"],
+  "reasoning": {
+    "mode": "bounded_two_stage",
+    "tokenizer_preflight_required": true,
+    "draft_thinking": true,
+    "final_thinking": false,
+    "temperature": 0,
+    "reasoning_budget": 8192,
+    "final_budget": 8192
+  }
+}
+

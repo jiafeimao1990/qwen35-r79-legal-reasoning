@@ -1,0 +1,28 @@
+{
+  "version": "r79-public-reasoning-graph-v1",
+  "patterns": 1030,
+  "source_internal_database_sha256": "e0ece9cbed2316ae18cd64f65a7db6d91a93357d6115a77e9adc86be1949b543",
+  "public_patterns_sha256": "30902f53cea8dee1da65cccd60b337d3b58466761e0920d8d70a50a6d2d421cf",
+  "public_database_sha256": "3a3df765d27f74ba6b2cd6c7bb908d047954c719651028e0ee9707d940e35ffa",
+  "builder_sha256": "548f7f31dca29addbde2ad38d390c9e15a546f86c58f8193aea858f3c505dd94",
+  "privacy": {
+    "private_json_copied": false,
+    "private_provenance_copied": false,
+    "source_paragraphs_copied": false,
+    "local_paths_copied": false,
+    "source_cluster_one_way_hashed": true,
+    "pii_pattern_hits": {
+      "identity_card": 0,
+      "mobile": 0,
+      "long_account": 0,
+      "windows_path": 0,
+      "wsl_path": 0
+    }
+  },
+  "limitations": {
+    "provisional_library": true,
+    "global_semantic_dedup_completed": false,
+    "expert_gold": false,
+    "legal_advice": false
+  }
+}
