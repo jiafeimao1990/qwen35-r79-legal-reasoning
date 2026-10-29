@@ -8,7 +8,13 @@ from pathlib import Path
 import jsonschema
 
 from r79_legal_reasoning.settings import Settings
-from r79_legal_reasoning.workflow import FACT_SCHEMA, LegalWorkflow, Material, _validate_facts
+from r79_legal_reasoning.workflow import (
+    FACT_SCHEMA,
+    LegalWorkflow,
+    Material,
+    _normalize_final_graph_refs,
+    _validate_facts,
+)
 
 
 class FakeClient:
@@ -178,6 +184,22 @@ def test_fact_schema_rejects_malformed_ids() -> None:
         assert "does not match" in str(exc)
     else:
         raise AssertionError("malformed actor ID was not rejected")
+
+
+def test_graph_ref_prefix_is_restored_only_for_allowed_node() -> None:
+    value = {
+        "claims": [
+            {
+                "graph_refs": ["GP_001:N1", "G:GP_001:N1", "UNKNOWN:N9"],
+            }
+        ]
+    }
+    report = _normalize_final_graph_refs(value, {"G:GP_001:N1"})
+    assert value["claims"][0]["graph_refs"] == ["G:GP_001:N1", "UNKNOWN:N9"]
+    assert report == {
+        "missing_graph_prefixes_restored": 1,
+        "duplicate_graph_refs_removed": 1,
+    }
 
 
 def test_graph_sha_tamper_is_rejected(tmp_path: Path) -> None:

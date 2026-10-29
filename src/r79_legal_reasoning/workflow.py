@@ -410,6 +410,30 @@ def _normalize_procedure(value: dict[str, Any]) -> dict[str, int | bool]:
     }
 
 
+def _normalize_final_graph_refs(
+    value: dict[str, Any], allowed_graph_refs: set[str]
+) -> dict[str, int]:
+    prefixed = 0
+    duplicates_removed = 0
+    for claim in value["claims"]:
+        normalized: list[str] = []
+        for graph_ref in claim["graph_refs"]:
+            mapped = graph_ref
+            candidate = f"G:{graph_ref}"
+            if graph_ref not in allowed_graph_refs and candidate in allowed_graph_refs:
+                mapped = candidate
+                prefixed += 1
+            if mapped in normalized:
+                duplicates_removed += 1
+                continue
+            normalized.append(mapped)
+        claim["graph_refs"] = normalized
+    return {
+        "missing_graph_prefixes_restored": prefixed,
+        "duplicate_graph_refs_removed": duplicates_removed,
+    }
+
+
 def _validate_facts(value: dict[str, Any]) -> None:
     actor_ids = _unique_ids(value["actors"], "actor_id", "fact actor")
     event_ids = _unique_ids(value["events"], "event_id", "fact event")
@@ -611,6 +635,7 @@ class LegalWorkflow:
             reasoning_budget=self.settings.reasoning_budget,
             final_budget=self.settings.final_budget,
         )
+        final_normalization = _normalize_final_graph_refs(final, allowed_graph_refs)
         _validate_refs(final, allowed_source_refs, allowed_graph_refs)
         used = self.client.native_requests - start_requests
         if used > self.settings.max_backend_requests:
@@ -635,6 +660,7 @@ class LegalWorkflow:
             "deterministic_normalization": {
                 "facts": facts_normalization,
                 "procedure": procedure_normalization,
+                "final": final_normalization,
             },
             "answer": final,
         }
