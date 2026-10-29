@@ -8,7 +8,7 @@
 - 外挂知识图谱：本地确定性检索，不调用模型，也不作为本案事实；
 - 类案 Wiki：独立检索端点，只返回最相关的一份完整原文，不注入推理。
 
-模型下载：[xujianing1990/qwen3.5-9b-fp8-1949-1978-r79-public](https://huggingface.co/xujianing1990/qwen3.5-9b-fp8-1949-1978-r79-public)
+模型下载（需邀请码并经 Hugging Face 账号审批）：[xujianing1990/qwen3.5-9b-fp8-1949-1978-r79-public](https://huggingface.co/xujianing1990/qwen3.5-9b-fp8-1949-1978-r79-public)。邀请码和完整申请步骤见 [模型访问说明](docs/MODEL_ACCESS.md)。
 
 > 这是研究预览，不是法律意见、专家金标或生产质量承诺。输出必须由合格人员复核。
 
@@ -26,7 +26,7 @@ pip install -e .
 # 在Linux/WSL的GPU环境安装经验证的后端版本
 pip install -r requirements-backend.txt
 
-# 公开 HF 仓库会下载到本地缓存目录
+# 先按 docs/MODEL_ACCESS.md 获批并运行 hf auth login；随后下载到本地缓存目录
 r79-legal download-model
 
 # 可选：用合成数据启用类案检索演示
