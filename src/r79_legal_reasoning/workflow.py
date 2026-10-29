@@ -338,6 +338,78 @@ def _unique_ids(rows: list[dict[str, Any]], field: str, label: str) -> set[str]:
     return set(values)
 
 
+def _dedupe_rows(
+    rows: list[dict[str, Any]], id_field: str | None = None
+) -> tuple[list[dict[str, Any]], dict[str, str], int]:
+    retained: list[dict[str, Any]] = []
+    seen: dict[str, str] = {}
+    aliases: dict[str, str] = {}
+    for row in rows:
+        semantic = {key: child for key, child in row.items() if key != id_field}
+        key = json.dumps(semantic, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        row_id = str(row[id_field]) if id_field else ""
+        if key in seen:
+            if id_field:
+                aliases[row_id] = seen[key]
+            continue
+        retained.append(row)
+        if id_field:
+            aliases[row_id] = row_id
+            seen[key] = row_id
+        else:
+            seen[key] = key
+    return retained, aliases, len(rows) - len(retained)
+
+
+def _remap_unique(values: list[str], aliases: dict[str, str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        mapped = aliases.get(value, value)
+        if mapped not in result:
+            result.append(mapped)
+    return result
+
+
+def _normalize_facts(value: dict[str, Any]) -> dict[str, int]:
+    value["actors"], actor_aliases, actor_removed = _dedupe_rows(value["actors"], "actor_id")
+    for event in value["events"]:
+        event["actor_ids"] = _remap_unique(event["actor_ids"], actor_aliases)
+    value["events"], event_aliases, event_removed = _dedupe_rows(value["events"], "event_id")
+    for evidence in value["evidence"]:
+        evidence["supports_event_ids"] = _remap_unique(
+            evidence["supports_event_ids"], event_aliases
+        )
+    value["evidence"], _, evidence_removed = _dedupe_rows(value["evidence"], "evidence_id")
+    value["uncertainties"], _, uncertainty_removed = _dedupe_rows(value["uncertainties"])
+    return {
+        "duplicate_actors_removed": actor_removed,
+        "duplicate_events_removed": event_removed,
+        "duplicate_evidence_removed": evidence_removed,
+        "duplicate_uncertainties_removed": uncertainty_removed,
+    }
+
+
+def _normalize_procedure(value: dict[str, Any]) -> dict[str, int | bool]:
+    value["actors"], actor_aliases, actor_removed = _dedupe_rows(value["actors"], "actor_id")
+    action_actor = actor_aliases.get(
+        value["challenged_action"]["actor_id"], value["challenged_action"]["actor_id"]
+    )
+    value["challenged_action"]["actor_id"] = action_actor
+    for step in value["steps"]:
+        step["actor_id"] = actor_aliases.get(step["actor_id"], step["actor_id"])
+    value["steps"], _, step_removed = _dedupe_rows(value["steps"], "step_id")
+    value["deadlines"], _, deadline_removed = _dedupe_rows(value["deadlines"])
+    value["unknowns"], _, unknown_removed = _dedupe_rows(value["unknowns"])
+    value["decision_maker_actor_id"] = action_actor
+    return {
+        "duplicate_actors_removed": actor_removed,
+        "duplicate_steps_removed": step_removed,
+        "duplicate_deadlines_removed": deadline_removed,
+        "duplicate_unknowns_removed": unknown_removed,
+        "decision_maker_derived_from_challenged_action": True,
+    }
+
+
 def _validate_facts(value: dict[str, Any]) -> None:
     actor_ids = _unique_ids(value["actors"], "actor_id", "fact actor")
     event_ids = _unique_ids(value["events"], "event_id", "fact event")
@@ -389,6 +461,20 @@ def _align_decision_maker(facts: dict[str, Any], procedure: dict[str, Any]) -> d
             for row in name_matches
             if set(row["source_refs"]).intersection(procedure_actor["source_refs"])
         ]
+    if len(candidates) > 1:
+
+        def role_score(row: dict[str, Any]) -> int:
+            role = str(row.get("role", ""))
+            if "作出" in role:
+                return 3
+            if "被申请人" in role or "行政机关" in role:
+                return 2
+            if "复议机关" in role:
+                return 0
+            return 1
+
+        best = max(role_score(row) for row in candidates)
+        candidates = [row for row in candidates if role_score(row) == best]
     if len(candidates) != 1:
         raise RuntimeError(
             "decision maker could not be aligned uniquely between facts and procedure by name/source"
@@ -454,6 +540,7 @@ class LegalWorkflow:
             reasoning_budget=self.settings.reasoning_budget,
             final_budget=self.settings.final_budget,
         )
+        facts_normalization = _normalize_facts(facts)
         _validate_refs(facts, allowed_source_refs, set())
         _validate_facts(facts)
 
@@ -478,6 +565,7 @@ class LegalWorkflow:
             reasoning_budget=self.settings.reasoning_budget,
             final_budget=self.settings.final_budget,
         )
+        procedure_normalization = _normalize_procedure(procedure)
         _validate_refs(procedure, allowed_source_refs, set())
         _validate_procedure(procedure)
         actor_alignment = _align_decision_maker(facts, procedure)
@@ -544,5 +632,9 @@ class LegalWorkflow:
             "selected_graphs": graphs,
             "facts": facts,
             "procedure": procedure,
+            "deterministic_normalization": {
+                "facts": facts_normalization,
+                "procedure": procedure_normalization,
+            },
             "answer": final,
         }
