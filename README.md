@@ -90,6 +90,7 @@ curl -s http://127.0.0.1:8088/v1/wiki/similar-case/search \
 默认审计模式为 `hashes`，只落盘请求/响应哈希、路由、token和状态，不保存原始法律材料或私有草稿。需要完整本地审计时显式设置 `R79_AUDIT_MODE=full`；这些文件含敏感材料和私有 thinking，只应保存在受控目录，API 永不返回。也可用 `R79_AUDIT_MODE=off` 关闭落盘。
 
 详细设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，评测结果见 [docs/EVALUATION.md](docs/EVALUATION.md)。
+实际后端兼容记录见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
 
 ## 数据边界
 
